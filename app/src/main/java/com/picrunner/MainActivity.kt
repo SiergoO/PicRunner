@@ -2,7 +2,7 @@ package com.picrunner
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.picrunner.ui.main.MainFragment
+import com.picrunner.screen.MainFragment
 
 class MainActivity : AppCompatActivity() {
 

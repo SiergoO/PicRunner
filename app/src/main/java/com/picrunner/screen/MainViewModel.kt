@@ -1,4 +1,4 @@
-package com.picrunner.ui.main
+package com.picrunner.screen
 
 import androidx.lifecycle.ViewModel
 
