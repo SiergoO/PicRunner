@@ -30,6 +30,11 @@ android {
                 "API_URL",
                 "\"https://www.flickr.com/services/rest/\""
             )
+            buildConfigField(
+                "String",
+                "FLICKR_API_KEY",
+                property("flickrApiKey").toString()
+            )
         }
         release {
             isMinifyEnabled = false
@@ -41,6 +46,11 @@ android {
                 "String",
                 "API_URL",
                 "\"https://www.flickr.com/services/rest/\""
+            )
+            buildConfigField(
+                "String",
+                "FLICKR_API_KEY",
+                property("flickrApiKey").toString()
             )
         }
     }
