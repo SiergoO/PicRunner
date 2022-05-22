@@ -6,9 +6,10 @@ import retrofit2.http.Query
 
 interface FlickrApi {
 
-    @GET("")
+    @GET(".")
     suspend fun searchPhotos(
         @Query("method") method: String = "flickr.photos.search",
+        @Query("format") format: String = "json",
         @Query("sort") sort: String = "relevance",
         @Query("accuracy") accuracy: Int = 16,
         @Query("geo_context") geoContext: Int = 2,

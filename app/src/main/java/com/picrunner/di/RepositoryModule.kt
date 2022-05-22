@@ -1,5 +1,6 @@
 package com.picrunner.di
 
+import com.picrunner.domain.repository.PhotoRepository
 import com.pricrunner.data.repository.PhotoRepositoryImpl
 import com.pricrunner.data.rest.FlickrApi
 import dagger.Module
@@ -12,5 +13,5 @@ import dagger.hilt.components.SingletonComponent
 object RepositoryModule {
 
     @Provides
-    fun providePhotoRepository(api: FlickrApi) = PhotoRepositoryImpl(api)
+    fun providePhotoRepository(api: FlickrApi): PhotoRepository = PhotoRepositoryImpl(api)
 }

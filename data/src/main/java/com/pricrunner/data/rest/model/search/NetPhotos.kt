@@ -6,6 +6,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class NetPhotos(
     @SerialName("photo")
-    val photoList: List<NetPhoto>,
-    val total: String
+    val photoList: ArrayList<NetPhoto>
 )

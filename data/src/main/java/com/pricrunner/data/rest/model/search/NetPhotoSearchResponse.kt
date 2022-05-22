@@ -1,9 +1,10 @@
 package com.pricrunner.data.rest.model.search
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class NetPhotoSearchResponse(
-    val photos: NetPhotos,
-    val stat: String
+    @SerialName("photos")
+    val photos: NetPhotos
 )
