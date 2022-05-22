@@ -1,12 +1,13 @@
 package com.pricrunner.data.rest
 
+import com.pricrunner.data.rest.model.search.NetPhotoSearchResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface FlickrApi {
 
     @GET("")
-    fun searchPhotos(
+    suspend fun searchPhotos(
         @Query("method") method: String = "flickr.photos.search",
         @Query("sort") sort: String = "relevance",
         @Query("accuracy") accuracy: Int = 16,
@@ -15,5 +16,5 @@ interface FlickrApi {
         @Query("lon") lon: Double,
         @Query("radius") radius: Double,
         @Query("radius_units") radiusUnits: String = "km"
-    )
+    ): NetPhotoSearchResponse
 }
