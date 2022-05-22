@@ -1,9 +1,9 @@
-package com.pricrunner.data.model
+package com.pricrunner.data.rest.model.search
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Photo(
+data class NetPhoto(
     val id: String,
     val secret: String,
     val server: String,

@@ -6,12 +6,6 @@ import dagger.hilt.components.SingletonComponent
 
 @Module
 @InstallIn(SingletonComponent::class)
-object RetrofitModule {
-
-}
-@Module
-@InstallIn(SingletonComponent::class)
 object RepositoryModule {
 
 }
-
