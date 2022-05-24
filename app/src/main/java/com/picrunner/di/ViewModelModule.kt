@@ -3,7 +3,7 @@ package com.picrunner.di
 import com.picrunner.domain.usecase.UseCase
 import com.picrunner.domain.usecase.search.SearchPhotosParam
 import com.picrunner.domain.usecase.search.SearchPhotosResult
-import com.picrunner.screen.MainViewModel
+import com.picrunner.screen.main.MainViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

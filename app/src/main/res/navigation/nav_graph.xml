@@ -8,7 +8,7 @@
 
     <fragment
         android:id="@+id/mainFragment"
-        android:name="com.picrunner.screen.MainFragment"
+        android:name="com.picrunner.screen.main.MainFragment"
         android:label="main_fragment"
         tools:layout="@layout/fragment_main" />
 </navigation>
