@@ -1,9 +1,9 @@
 package com.picrunner.di
 
 import com.picrunner.domain.usecase.UseCase
-import com.picrunner.domain.usecase.search.SearchPhotosParam
-import com.picrunner.domain.usecase.search.SearchPhotosResult
-import com.picrunner.screen.main.MainViewModel
+import com.picrunner.domain.usecase.search.GetNearestPhotoUrlListParam
+import com.picrunner.domain.usecase.search.GetNearestPhotoUrlListResult
+import com.picrunner.screen.main.WalkViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,8 +15,8 @@ object ViewModelModule {
 
     @Provides
     fun provideMainViewModel(
-        searchPhotosUseCase: UseCase<SearchPhotosParam, SearchPhotosResult>
-    ): MainViewModel {
-        return MainViewModel(searchPhotosUseCase)
+        searchPhotosUseCase: UseCase<GetNearestPhotoUrlListParam, GetNearestPhotoUrlListResult>
+    ): WalkViewModel {
+        return WalkViewModel(searchPhotosUseCase)
     }
 }

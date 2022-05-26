@@ -1,9 +1,11 @@
 package com.picrunner.screen.main
 
 import android.Manifest
-import android.content.*
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
@@ -15,39 +17,35 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.picrunner.BuildConfig
 import com.picrunner.R
-import com.picrunner.databinding.FragmentMainBinding
+import com.picrunner.databinding.FragmentWalkBinding
 import com.picrunner.service.LocationService
-import com.picrunner.util.isServiceRunning
-import com.picrunner.util.isServiceRunningInForeground
 import com.picrunner.util.showEndlessSnackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class MainFragment : Fragment() {
+class WalkFragment : Fragment() {
 
     companion object {
         private const val TAG = "MainFragment"
     }
 
-    private val viewModel: MainViewModel by viewModels()
-    private var _binding: FragmentMainBinding? = null
-    val binding: FragmentMainBinding
+    private val viewModel: WalkViewModel by viewModels()
+    private var _binding: FragmentWalkBinding? = null
+    val binding: FragmentWalkBinding
         get() = _binding!!
 
-    private var locationService: LocationService? = null
+    private var walkAdapter: WalkAdapter? = null
 
-    private var locationReceiver: LocationReceiver? = null
-    private var locationServiceStateReceiver: LocationServiceStateReceiver? = null
+    private var locationService: LocationService? = null
 
     private val serviceConnection = object : ServiceConnection {
 
@@ -55,6 +53,13 @@ class MainFragment : Fragment() {
             Log.d(LocationService.TAG, "Background service connected.")
             val binder = service as LocationService.LocationBinder
             locationService = binder.service
+            lifecycleScope.launchWhenCreated {
+                binder.service.isLocationDetectionInProgress.collect {
+                    binding.btnStart.isVisible = !it
+                    binding.btnStop.isVisible = it
+                }
+            }
+            viewModel.sendLocation(binder.service.locationFlow)
             requestPermission()
         }
 
@@ -83,11 +88,6 @@ class MainFragment : Fragment() {
         }
     }
 
-    init {
-        locationReceiver = LocationReceiver()
-        locationServiceStateReceiver = LocationServiceStateReceiver()
-    }
-
     override fun onStart() {
         super.onStart()
         requireActivity().bindService(
@@ -95,17 +95,6 @@ class MainFragment : Fragment() {
             serviceConnection,
             Context.BIND_AUTO_CREATE
         )
-        /** These registered receivers will live as long as application will due to
-         application context. According to the documentation there is no necessity
-        to unregister if we want them to live as long as activity will. */
-        locationReceiver?.let {
-            LocalBroadcastManager.getInstance(requireActivity().applicationContext)
-                .registerReceiver(it, IntentFilter(LocationService.ACTION_LOCATION_BROADCAST))
-        }
-        locationServiceStateReceiver?.let {
-            LocalBroadcastManager.getInstance(requireActivity().applicationContext)
-                .registerReceiver(it, IntentFilter(LocationService.ACTION_SERVICE_STATE_BROADCAST))
-        }
     }
 
     override fun onCreateView(
@@ -113,33 +102,33 @@ class MainFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentMainBinding.inflate(inflater)
+        _binding = FragmentWalkBinding.inflate(inflater)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        walkAdapter = WalkAdapter(Glide.with(requireContext()))
+        binding.listLocationPhotos.apply {
+            val llm = LinearLayoutManager(
+                requireContext(),
+                LinearLayoutManager.VERTICAL,
+                true
+            )
+            llm.stackFromEnd = true
+            layoutManager = llm
+            adapter = walkAdapter
+        }
         binding.btnStart.setOnClickListener {
-            locationService?.requestLocationUpdates()
-            viewModel.startWalk()
+            locationService?.run {
+                requestLocationUpdates()
+            }
         }
         binding.btnStop.setOnClickListener {
             locationService?.cancelLocationUpdates()
-            viewModel.stopWalk()
         }
         lifecycleScope.launchWhenCreated {
-            viewModel.isLocationDetectionInProgress.collect { inProgress ->
-                if (inProgress) {
-                    binding.btnStart.visibility = View.GONE
-                    binding.btnStop.visibility = View.VISIBLE
-                } else {
-                    binding.btnStart.visibility = View.VISIBLE
-                    binding.btnStop.visibility = View.GONE
-                }
-            }
-        }
-        lifecycleScope.launchWhenCreated {
-            viewModel.imagesFlow.collect { image ->
-                Toast.makeText(context, image.toString(), Toast.LENGTH_LONG).show()
+            viewModel.photoUriListFlow.collect { photoUrlList ->
+                walkAdapter?.submitList(photoUrlList)
             }
         }
         lifecycleScope.launchWhenCreated {
@@ -152,6 +141,7 @@ class MainFragment : Fragment() {
 
     override fun onDestroyView() {
         _binding = null
+        walkAdapter = null
         super.onDestroyView()
     }
 
@@ -182,25 +172,6 @@ class MainFragment : Fragment() {
             }
             else -> {
                 // Do nothing
-            }
-        }
-    }
-
-    inner class LocationReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val location = intent.getParcelableExtra<Location>(LocationService.KEY_EXTRA_LOCATION)
-            if (location != null) {
-                viewModel.locationFlow.trySend(location)
-            }
-            Toast.makeText(context, location.toString(), Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    inner class LocationServiceStateReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val isRunning = intent.getBooleanExtra(LocationService.KEY_EXTRA_SERVICE_STATE, false)
-            lifecycleScope.launch {
-                viewModel.isLocationDetectionInProgress.emit(isRunning)
             }
         }
     }

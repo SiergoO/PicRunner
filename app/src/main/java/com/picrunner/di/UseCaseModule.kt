@@ -2,9 +2,9 @@ package com.picrunner.di
 
 import com.picrunner.domain.repository.PhotoRepository
 import com.picrunner.domain.usecase.UseCase
-import com.picrunner.domain.usecase.search.SearchPhotosParam
-import com.picrunner.domain.usecase.search.SearchPhotosResult
-import com.picrunner.domain.usecase.search.SearchPhotosUseCase
+import com.picrunner.domain.usecase.search.GetNearestPhotoUrlListParam
+import com.picrunner.domain.usecase.search.GetNearestPhotoUrlListResult
+import com.picrunner.domain.usecase.search.GetNearestPhotosUrlListUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +17,6 @@ object UseCaseModule {
     @Provides
     fun provideSearchPhotosUseCase(
         photoRepository: PhotoRepository
-    ): UseCase<SearchPhotosParam, SearchPhotosResult> =
-        SearchPhotosUseCase(photoRepository)
+    ): UseCase<GetNearestPhotoUrlListParam, GetNearestPhotoUrlListResult> =
+        GetNearestPhotosUrlListUseCase(photoRepository)
 }

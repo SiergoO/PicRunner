@@ -6,11 +6,11 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.os.*
+import android.os.Build.VERSION_CODES.P
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationRequest.create
@@ -19,17 +19,21 @@ import com.picrunner.R
 import com.picrunner.util.isServiceRunningInForeground
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.runningReduce
 import kotlinx.coroutines.launch
 
 class LocationService : LifecycleService() {
 
     companion object {
 
-        const val KEY_EXTRA_LOCATION = "location"
-        const val KEY_EXTRA_SERVICE_STATE = "locationServiceState"
-        const val ACTION_LOCATION_BROADCAST = "locationBroadcast"
-        const val ACTION_SERVICE_STATE_BROADCAST = "locationServiceStateBroadcast"
         const val TAG = "LocationService"
 
         private const val NOTIFICATION_CHANNEL_ID = "locationNotificationChannel"
@@ -37,19 +41,30 @@ class LocationService : LifecycleService() {
         private const val KEY_EXTRA_LAUNCHED_FROM_NOTIFICATION = "launchedFromNotification"
 
         private const val SMALLEST_DISPLACEMENT_IN_METERS = 100F
-        private const val INTERVAL_TIME_IN_MILLIS = 20_000L
-        private const val FASTEST_INTERVAL_TIME_IN_MILLIS = 10_000L
+        private const val INTERVAL_TIME_IN_MILLIS = 30_000L
+        private const val FASTEST_INTERVAL_TIME_IN_MILLIS = 20_000L
     }
 
     private val job = SupervisorJob()
     private val locationServiceScope = CoroutineScope(Dispatchers.IO + job)
 
+    private var locationJob: Job? = null
+
     private val binder = LocationBinder()
+
+    private val locationChannel = Channel<Location>(Channel.UNLIMITED)
+
+    private val _locationFlow = MutableStateFlow<List<Location>>(listOf())
+    val locationFlow = _locationFlow.asStateFlow()
+
+    private val _isLocationDetectionInProgress = MutableStateFlow(false)
+    val isLocationDetectionInProgress = _isLocationDetectionInProgress.asStateFlow()
 
     private var locationRequest: LocationRequest? = null
     private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private var locationServiceHandler: Handler? = null
     private var location: Location? = null
+    private var latestLocationList: MutableList<Location> = mutableListOf()
     private var notificationManager: NotificationManager? = null
     private var locationCallback: LocationCallback? = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
@@ -134,10 +149,22 @@ class LocationService : LifecycleService() {
     fun requestLocationUpdates() {
         Log.i(TAG, "Requesting location updates")
         startService(Intent(applicationContext, LocationService::class.java))
+        if (locationJob?.isActive != true) {
+            locationJob = locationServiceScope.launch {
+                locationChannel
+                    .receiveAsFlow()
+                    .map { listOf(it) }
+                    .runningReduce { accumulator, value -> accumulator + value }
+                    .collect {
+                        _locationFlow.value = it
+                    }
+            }
+        }
+
         try {
             if (locationRequest != null && locationCallback != null) {
                 fusedLocationProviderClient?.requestLocationUpdates(
-                    locationRequest!!, locationCallback!!, Looper.myLooper() ?: Looper.getMainLooper()
+                    locationRequest!!, locationCallback!!, Looper.getMainLooper()
                 )
             }
 //            TODO clear collected images list
@@ -158,9 +185,11 @@ class LocationService : LifecycleService() {
         try {
             locationCallback?.let { fusedLocationProviderClient?.removeLocationUpdates(it) }
             stopSelf()
+            locationJob?.cancel()
             onLocationServiceStateChanged(false)
+            latestLocationList.clear()
         } catch (exception: SecurityException) {
-            Log.e(TAG,exception.message.toString())
+            Log.e(TAG, exception.message.toString())
         }
     }
 
@@ -170,44 +199,36 @@ class LocationService : LifecycleService() {
                 if (task.isSuccessful && task.result != null) {
                     location = task.result!!
                 } else {
-                    Log.w(TAG,"Location request failed.")
+                    Log.w(TAG, "Location request failed.")
                 }
             }
         } catch (exception: SecurityException) {
-            Log.e(TAG,exception.message.toString())
+            Log.e(TAG, exception.message.toString())
         }
     }
 
     private fun onLocationServiceStateChanged(isRunning: Boolean) {
         locationServiceScope.launch {
-            val intent = Intent(ACTION_SERVICE_STATE_BROADCAST)
-            intent.putExtra(KEY_EXTRA_SERVICE_STATE, isRunning)
-            LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
+            _isLocationDetectionInProgress.emit(isRunning)
         }
     }
 
-    /** This function call every time we have a unique location according to
-     * location request parameters and send broadcast intent with location
-     * put in extras to receive it outside via BroadcastReceiver */
     private fun onNewLocation(location: Location) {
-        Log.i(TAG,"New location: $location")
+        Log.i(TAG, "New location: $location")
         this.location = location
 
         locationServiceScope.launch {
-            val intent = Intent(ACTION_LOCATION_BROADCAST)
-            intent.putExtra(KEY_EXTRA_LOCATION, location)
-            LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
-        }
-
-        if (this.isServiceRunningInForeground()) {
-            notificationManager?.notify(NOTIFICATION_ID, getNotification())
+            locationChannel.send(location)
+            if (this@LocationService.isServiceRunningInForeground()) {
+                notificationManager?.notify(NOTIFICATION_ID, getNotification())
+            }
         }
     }
 
     private fun createLocationRequest() {
         locationRequest = create().apply {
             priority = PRIORITY_HIGH_ACCURACY
-            smallestDisplacement = SMALLEST_DISPLACEMENT_IN_METERS
+//            smallestDisplacement = SMALLEST_DISPLACEMENT_IN_METERS
             interval = INTERVAL_TIME_IN_MILLIS
             fastestInterval = FASTEST_INTERVAL_TIME_IN_MILLIS
         }

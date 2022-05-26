@@ -83,6 +83,9 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.4.0")
     implementation("androidx.fragment:fragment-ktx:1.4.1")
 
+    //Glide
+    implementation("com.github.bumptech.glide:glide:4.13.0")
+
     //Lifecycle
     implementation("androidx.lifecycle:lifecycle-service:2.4.1")
 
