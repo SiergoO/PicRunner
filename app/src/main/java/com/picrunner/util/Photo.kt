@@ -1,4 +1,4 @@
-package com.picrunner.domain.util
+package com.picrunner.util
 
 import com.picrunner.domain.model.Photo
 

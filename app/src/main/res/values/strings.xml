@@ -8,7 +8,7 @@
     <string name="notification_title">Your walk is in progress…</string>
     <string name="notification_cancel">Cancel</string>
     <string name="notification_content_title">Challenge accepted…</string>
-    <string name="notification_content_text">Your walk is in progress. Don\'t forget to come back to the app to see where you\'ve been walking today!</string>
+    <string name="notification_content_text">Your walk is in progress. Go to the app to see where you\'ve been walking today!</string>
     <string name="notification_action_go_to_app">Go to App</string>
     <string name="notification_action_stop">Stop</string>
 

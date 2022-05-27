@@ -1,7 +1,28 @@
+import org.jetbrains.kotlin.kapt3.base.Kapt.kapt
+
 plugins {
-    id("kotlin")
-    id("org.jetbrains.kotlin.plugin.serialization") version("1.6.21")
-    `java-library`
+    kotlin("android")
+    id("com.android.library")
+    kotlin("kapt")
+    id("org.jetbrains.kotlin.plugin.serialization") version ("1.6.21")
+    id("com.stepango.aar2jar") version "0.6"
+}
+
+buildscript {
+    dependencies {
+        classpath("com.android.tools.build:gradle:7.2.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.21")
+    }
+}
+
+android {
+    namespace = "com.picrunner.data"
+    compileSdk = 32
+
+    defaultConfig {
+        minSdk = 21
+        targetSdk = 32
+    }
 }
 
 dependencies {
@@ -15,7 +36,13 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
 
     //Retrofit
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+
+    //Room
+    kapt("androidx.room:room-compiler:2.4.2")
+    implementation("androidx.room:room-common:2.4.2")
+    implementation("androidx.room:room-ktx:2.4.2")
+    implementation("androidx.room:room-runtime:2.4.2")
 
     //Serialization
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:0.8.0")

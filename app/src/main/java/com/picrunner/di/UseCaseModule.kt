@@ -2,9 +2,15 @@ package com.picrunner.di
 
 import com.picrunner.domain.repository.PhotoRepository
 import com.picrunner.domain.usecase.UseCase
-import com.picrunner.domain.usecase.search.GetNearestPhotoUrlListParam
-import com.picrunner.domain.usecase.search.GetNearestPhotoUrlListResult
-import com.picrunner.domain.usecase.search.GetNearestPhotosUrlListUseCase
+import com.picrunner.domain.usecase.search.DeleteAllPhotosFromDBUseCase
+import com.picrunner.domain.usecase.search.DeleteAllPhotosFromDBUseCaseParam
+import com.picrunner.domain.usecase.search.DeleteAllPhotosFromDBUseCaseResult
+import com.picrunner.domain.usecase.search.GetAllPhotosFromDBUseCase
+import com.picrunner.domain.usecase.search.GetAllPhotosFromDBUseCaseParam
+import com.picrunner.domain.usecase.search.GetAllPhotosFromDBUseCaseResult
+import com.picrunner.domain.usecase.search.GetNearestPhotoParam
+import com.picrunner.domain.usecase.search.GetNearestPhotoResult
+import com.picrunner.domain.usecase.search.GetNearestPhotoUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +23,18 @@ object UseCaseModule {
     @Provides
     fun provideSearchPhotosUseCase(
         photoRepository: PhotoRepository
-    ): UseCase<GetNearestPhotoUrlListParam, GetNearestPhotoUrlListResult> =
-        GetNearestPhotosUrlListUseCase(photoRepository)
+    ): UseCase<GetNearestPhotoParam, GetNearestPhotoResult> =
+        GetNearestPhotoUseCase(photoRepository)
+
+    @Provides
+    fun provideGetAllPhotosFromDBUseCase(
+        photoRepository: PhotoRepository
+    ): UseCase<GetAllPhotosFromDBUseCaseParam, GetAllPhotosFromDBUseCaseResult> =
+        GetAllPhotosFromDBUseCase(photoRepository)
+
+    @Provides
+    fun provideDeleteAllPhotosFromDBUseCase(
+        photoRepository: PhotoRepository
+    ): UseCase<DeleteAllPhotosFromDBUseCaseParam, DeleteAllPhotosFromDBUseCaseResult> =
+        DeleteAllPhotosFromDBUseCase(photoRepository)
 }

@@ -24,6 +24,7 @@ android {
 
     buildTypes {
         debug {
+            isMinifyEnabled = false
             buildConfigField(
                 "String",
                 "API_URL",
@@ -54,12 +55,13 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
+    buildToolsVersion = "32.1.0-rc1"
 }
 
 kapt {
@@ -95,6 +97,7 @@ dependencies {
     //Hilt
     implementation("com.google.dagger:hilt-android-gradle-plugin:2.38.1")
     implementation("com.google.dagger:hilt-android:2.38.1")
+    implementation("androidx.room:room-ktx:2.4.2")
     kapt("com.google.dagger:hilt-android-compiler:2.38.1")
 
     //Hilt ViewModel
@@ -105,6 +108,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
 
+    implementation("androidx.room:room-ktx:2.4.2")
+    implementation("androidx.room:room-runtime:2.4.2")
+
     //Retrofit
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
 
@@ -114,6 +120,10 @@ dependencies {
 
     //GMS
     implementation("com.google.android.gms:play-services-location:19.0.1")
+
+    //Room
+    kapt("androidx.room:room-compiler:2.4.2")
+    implementation("androidx.room:room-runtime:2.4.2")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.3")

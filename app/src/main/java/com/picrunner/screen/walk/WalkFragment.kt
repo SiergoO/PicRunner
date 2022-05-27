@@ -1,4 +1,4 @@
-package com.picrunner.screen.main
+package com.picrunner.screen.walk
 
 import android.Manifest
 import android.content.ComponentName
@@ -14,7 +14,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -28,8 +27,13 @@ import com.picrunner.BuildConfig
 import com.picrunner.R
 import com.picrunner.databinding.FragmentWalkBinding
 import com.picrunner.service.LocationService
-import com.picrunner.util.showEndlessSnackbar
+import com.picrunner.util.makeEndlessSnackbar
+import com.picrunner.util.showErrorSnackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 
 @AndroidEntryPoint
 class WalkFragment : Fragment() {
@@ -42,6 +46,8 @@ class WalkFragment : Fragment() {
     private var _binding: FragmentWalkBinding? = null
     val binding: FragmentWalkBinding
         get() = _binding!!
+
+    private var photoJob: Job? = null
 
     private var walkAdapter: WalkAdapter? = null
 
@@ -59,7 +65,25 @@ class WalkFragment : Fragment() {
                     binding.btnStop.isVisible = it
                 }
             }
-            viewModel.sendLocation(binder.service.locationFlow)
+            if (photoJob?.isActive != true) {
+                photoJob = lifecycleScope.launchWhenCreated {
+                    viewModel.getSavedPhotos()
+                    binder.service.photoFlow
+                        .filterNotNull()
+                        .collect { photo ->
+                            walkAdapter!!.apply {
+                                val uniqueList = (currentList.filterNot { it.id == photo.id } + photo).toMutableList()
+                                submitList(uniqueList)
+                                binding.listLocationPhotos.smoothScrollToPosition(currentList.size)
+                            }
+                        }
+                }
+            }
+            lifecycleScope.launchWhenCreated {
+                binder.service.errorFlow.collect { error ->
+                    requireView().showErrorSnackbar(error)
+                }
+            }
             requestPermission()
         }
 
@@ -75,7 +99,7 @@ class WalkFragment : Fragment() {
             Log.d(TAG, "Permission granted")
         } else {
             requireView()
-                .showEndlessSnackbar(getString(R.string.location_permission_settings_text))
+                .makeEndlessSnackbar(getString(R.string.location_permission_settings_text))
                 .setAction(getString(R.string.location_permission_settings_text)) {
                     val intent = Intent()
                     intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
@@ -120,6 +144,7 @@ class WalkFragment : Fragment() {
         }
         binding.btnStart.setOnClickListener {
             locationService?.run {
+                walkAdapter?.submitList(listOf())
                 requestLocationUpdates()
             }
         }
@@ -127,13 +152,16 @@ class WalkFragment : Fragment() {
             locationService?.cancelLocationUpdates()
         }
         lifecycleScope.launchWhenCreated {
-            viewModel.photoUriListFlow.collect { photoUrlList ->
-                walkAdapter?.submitList(photoUrlList)
+            viewModel.errorFlow.collect {
+                requireView().showErrorSnackbar(it)
             }
         }
         lifecycleScope.launchWhenCreated {
-            viewModel.errorFlow.collect { error ->
-                Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
+            viewModel.savedPhotos.collect { photos ->
+                walkAdapter?.apply {
+                    submitList(photos.reversed())
+                    binding.listLocationPhotos.scrollToPosition(photos.size)
+                }
             }
         }
         super.onViewCreated(view, savedInstanceState)
@@ -147,6 +175,8 @@ class WalkFragment : Fragment() {
 
     override fun onStop() {
         requireActivity().unbindService(serviceConnection)
+        photoJob?.cancel()
+        photoJob = null
         super.onStop()
     }
 
