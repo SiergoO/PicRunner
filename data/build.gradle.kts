@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.jetbrains.kotlin.kapt3.base.Kapt.kapt
 
 plugins {
@@ -5,10 +6,10 @@ plugins {
     id("com.android.library")
     kotlin("kapt")
     id("org.jetbrains.kotlin.plugin.serialization") version ("1.6.21")
-    id("com.stepango.aar2jar") version "0.6"
 }
 
 buildscript {
+
     dependencies {
         classpath("com.android.tools.build:gradle:7.2.0")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.21")
@@ -22,6 +23,47 @@ android {
     defaultConfig {
         minSdk = 21
         targetSdk = 32
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("keyStore.jks")
+            storePassword = gradleLocalProperties(rootDir).getValue("storePassword").toString()
+            keyAlias = gradleLocalProperties(rootDir).getValue("keyAlias").toString()
+            keyPassword = gradleLocalProperties(rootDir).getValue("keyPassword").toString()
+        }
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "API_URL",
+                "\"https://www.flickr.com/services/rest/\""
+            )
+            buildConfigField(
+                "String",
+                "FLICKR_API_KEY",
+                property("flickrApiKey").toString()
+            )
+        }
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            buildConfigField(
+                "String",
+                "API_URL",
+                "\"https://www.flickr.com/services/rest/\""
+            )
+            buildConfigField(
+                "String",
+                "FLICKR_API_KEY",
+                property("flickrApiKey").toString()
+            )
+        }
     }
 }
 

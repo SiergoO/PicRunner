@@ -67,8 +67,8 @@ class LocationService @Inject constructor() : LifecycleService() {
         private const val KEY_EXTRA_LAUNCHED_FROM_NOTIFICATION = "launchedFromNotification"
 
         private const val SMALLEST_DISPLACEMENT_IN_METERS = 100F
-        private const val INTERVAL_TIME_IN_MILLIS = 25_000L
-        private const val FASTEST_INTERVAL_TIME_IN_MILLIS = 15_000L
+        private const val INTERVAL_TIME_IN_MILLIS = 40_000L
+        private const val FASTEST_INTERVAL_TIME_IN_MILLIS = 20_000L
     }
 
     @Inject
@@ -89,10 +89,10 @@ class LocationService @Inject constructor() : LifecycleService() {
     private val _isLocationDetectionInProgress = MutableStateFlow(false)
     val isLocationDetectionInProgress = _isLocationDetectionInProgress.asStateFlow()
 
-    private val _photoFlow = MutableStateFlow<Photo?>(null)
-    val photoFlow = _photoFlow.asStateFlow()
+    private val _photoFlow = Channel<Photo>(capacity = Channel.RENDEZVOUS)
+    val photoFlow = _photoFlow.receiveAsFlow()
 
-    private val _errorChannel = Channel<Throwable>(Channel.UNLIMITED)
+    private val _errorChannel = Channel<Throwable>(Channel.RENDEZVOUS)
     val errorFlow: Flow<Throwable> = _errorChannel.receiveAsFlow()
 
     private var locationRequest: LocationRequest? = null
@@ -183,8 +183,6 @@ class LocationService @Inject constructor() : LifecycleService() {
         Log.i(TAG, "Unbound from service and starting foreground")
         startForeground(NOTIFICATION_ID, getNotification())
         onLocationServiceStateChanged(false)
-//        locationJob?.cancel()
-//        locationJob = null
         return true
     }
 
@@ -287,7 +285,7 @@ class LocationService @Inject constructor() : LifecycleService() {
             GetNearestPhotoParam(Pair(location.latitude, location.longitude))
         ).fold(
             onSuccess = { photo ->
-                _photoFlow.value = photo
+                _photoFlow.trySend(photo)
             },
             onFailure = { error ->
                 //Emitting location to get undelivered photos later

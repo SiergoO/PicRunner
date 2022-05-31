@@ -18,7 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class WalkViewModel @Inject constructor(
     private val getAllPhotosFromDBUseCase: UseCase<GetAllPhotosFromDBUseCaseParam, GetAllPhotosFromDBUseCaseResult>
-): ViewModel() {
+) : ViewModel() {
 
     private val _savedPhotos = MutableStateFlow<List<Photo>>(listOf())
     val savedPhotos = _savedPhotos.asStateFlow()
@@ -27,15 +27,13 @@ class WalkViewModel @Inject constructor(
     val errorFlow: Flow<Throwable> = _errorChannel.receiveAsFlow()
 
     suspend fun getSavedPhotos() {
-        viewModelScope.launch {
-            getAllPhotosFromDBUseCase.execute(GetAllPhotosFromDBUseCaseParam).fold(
-                onSuccess = {
-                    _savedPhotos.emit(it)
-                },
-                onFailure = {
-                    _errorChannel.send(it)
-                }
-            )
-        }
+        getAllPhotosFromDBUseCase.execute(GetAllPhotosFromDBUseCaseParam).fold(
+            onSuccess = {
+                _savedPhotos.emit(it)
+            },
+            onFailure = {
+                _errorChannel.send(it)
+            }
+        )
     }
 }

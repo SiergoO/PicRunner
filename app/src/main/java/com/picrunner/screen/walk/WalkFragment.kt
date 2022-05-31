@@ -23,17 +23,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
-import com.picrunner.BuildConfig
 import com.picrunner.R
 import com.picrunner.databinding.FragmentWalkBinding
 import com.picrunner.service.LocationService
 import com.picrunner.util.makeEndlessSnackbar
 import com.picrunner.util.showErrorSnackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNotNull
 
 @AndroidEntryPoint
 class WalkFragment : Fragment() {
@@ -46,8 +41,6 @@ class WalkFragment : Fragment() {
     private var _binding: FragmentWalkBinding? = null
     val binding: FragmentWalkBinding
         get() = _binding!!
-
-    private var photoJob: Job? = null
 
     private var walkAdapter: WalkAdapter? = null
 
@@ -65,19 +58,17 @@ class WalkFragment : Fragment() {
                     binding.btnStop.isVisible = it
                 }
             }
-            if (photoJob?.isActive != true) {
-                photoJob = lifecycleScope.launchWhenCreated {
-                    viewModel.getSavedPhotos()
-                    binder.service.photoFlow
-                        .filterNotNull()
-                        .collect { photo ->
-                            walkAdapter!!.apply {
-                                val uniqueList = (currentList.filterNot { it.id == photo.id } + photo).toMutableList()
-                                submitList(uniqueList)
-                                binding.listLocationPhotos.smoothScrollToPosition(currentList.size)
-                            }
+            lifecycleScope.launchWhenCreated {
+                viewModel.getSavedPhotos()
+                binder.service.photoFlow
+                    .collect { photo ->
+                        walkAdapter!!.apply {
+                            val uniqueList = (currentList + photo).toMutableList()
+                            submitList(uniqueList)
+                            notifyItemInserted(uniqueList.size - 1)
+                            binding.listLocationPhotos.smoothScrollToPosition(uniqueList.size)
                         }
-                }
+                    }
             }
             lifecycleScope.launchWhenCreated {
                 binder.service.errorFlow.collect { error ->
@@ -99,11 +90,11 @@ class WalkFragment : Fragment() {
             Log.d(TAG, "Permission granted")
         } else {
             requireView()
-                .makeEndlessSnackbar(getString(R.string.location_permission_settings_text))
+                .makeEndlessSnackbar(getString(R.string.location_permission_text))
                 .setAction(getString(R.string.location_permission_settings_text)) {
                     val intent = Intent()
                     intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                    val uri = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
+                    val uri = Uri.fromParts("package", com.picrunner.BuildConfig.APPLICATION_ID, null)
                     intent.data = uri
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(intent)
@@ -175,8 +166,6 @@ class WalkFragment : Fragment() {
 
     override fun onStop() {
         requireActivity().unbindService(serviceConnection)
-        photoJob?.cancel()
-        photoJob = null
         super.onStop()
     }
 

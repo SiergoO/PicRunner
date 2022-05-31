@@ -1,11 +1,15 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 plugins {
     kotlin("android")
     kotlin("kapt")
     id("com.android.application")
+    // If there will be problems with that plugin delete it + sync + rebuild
     id("dagger.hilt.android.plugin")
 }
 
 android {
+
     namespace = "com.picrunner"
     compileSdk = 32
 
@@ -22,42 +26,31 @@ android {
         viewBinding = true
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("keyStore.jks")
+            storePassword = gradleLocalProperties(rootDir).getValue("storePassword").toString()
+            keyAlias = gradleLocalProperties(rootDir).getValue("keyAlias").toString()
+            keyPassword = gradleLocalProperties(rootDir).getValue("keyPassword").toString()
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
-            buildConfigField(
-                "String",
-                "API_URL",
-                "\"https://www.flickr.com/services/rest/\""
-            )
-            buildConfigField(
-                "String",
-                "FLICKR_API_KEY",
-                property("flickrApiKey").toString()
-            )
+
         }
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            buildConfigField(
-                "String",
-                "API_URL",
-                "\"https://www.flickr.com/services/rest/\""
-            )
-            buildConfigField(
-                "String",
-                "FLICKR_API_KEY",
-                property("flickrApiKey").toString()
-            )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
@@ -95,13 +88,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1")
 
     //Hilt
-    implementation("com.google.dagger:hilt-android-gradle-plugin:2.38.1")
+    implementation("com.google.dagger:hilt-android-gradle-plugin:2.41")
     implementation("com.google.dagger:hilt-android:2.38.1")
-    implementation("androidx.room:room-ktx:2.4.2")
     kapt("com.google.dagger:hilt-android-compiler:2.38.1")
-
-    //Hilt ViewModel
-    implementation("androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03")
     kapt("androidx.hilt:hilt-compiler:1.0.0")
 
     //OkHttp
