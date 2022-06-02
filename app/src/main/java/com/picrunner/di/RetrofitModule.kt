@@ -1,9 +1,8 @@
 package com.picrunner.di
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.picrunner.BuildConfig
-import com.picrunner.BuildConfig.API_URL
-import com.picrunner.BuildConfig.FLICKR_API_KEY
+import com.picrunner.data.BuildConfig.API_URL
+import com.picrunner.data.BuildConfig.FLICKR_API_KEY
 import com.pricrunner.data.rest.FlickrApi
 import dagger.Module
 import dagger.Provides
