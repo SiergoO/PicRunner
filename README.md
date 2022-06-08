@@ -1,4 +1,4 @@
-# Siarhei Damashchuk - Challenge
+# PicRunner
 
 # An android application for tracking views while walking, hiking, running :
 
@@ -9,8 +9,6 @@
 - Once the start button clicked - the previous session is being deleted;
 - Data is collected in any phone state, even if the app is closed, until user will stop it manually;
 - Control over network state is also supporting;
-
-# Time spent ~18h
 
 # Approaches and technologies used:
 - Kotlin 100%
@@ -40,18 +38,11 @@
 - Location
 - Permission
 
-#Challenging parts:
-- Implement Flow on "real" project.
-- Organize service correctly.
-- Support many user's behaviour test cases and make app "undying".
-- Perform in "time-limited" mode
-
-#What I've learnt:
+# What I've learnt:
 - Some Flow usage cases
 - Some new Flow operators
 - Foreground service behaviour
-- Hilt pluses over Dagger
+- Hilt pluses and minuses over Dagger
 - Some gradle.kts features
 - If you use database create data module as app library!
-- Tried ListAdapter one more time
 - How to request permissions over classic version
